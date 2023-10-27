@@ -9,7 +9,7 @@ let _state = STATE_INIT;
 let _start = false;
 let _widget = null;
 
-let BOARD_SIZE = 20;
+let BOARD_SIZE = 30;
 
 let _mapWidth = Map.width;
 let _mapHeight = Map.height;
@@ -37,16 +37,12 @@ let explosion = App.loadSpritesheet(
 	"explosion2.png",
 	96,
 	96,
-	Array.from({ length: 33 }, (v, i) => i),
+	{
+		play: Array.from({ length: 40 }, (v, i) => i),
+	},
 	33
 );
-let redBlock = App.loadSpritesheet(
-	"redBlock.png",
-	32,
-	32,
-	[0, 1, 2, 3, 4, 5, 6],
-	10
-);
+let redBlock = App.loadSpritesheet("redBlock.png", 32, 32, { play: [0, 1, 2, 3, 4, 5, 6] });
 let wall = App.loadSpritesheet("wall.png");
 let wall_offset = App.loadSpritesheet("wall_offset.png");
 
@@ -66,77 +62,88 @@ let ghost = App.loadSpritesheet(
 let start_delay = 0;
 const START_DELAY = 5;
 
-// // 이미지 오프셋 만큼 맵을 막아줘야함
-// function blockArea() {
-// 	for (let i = 0; i < _mapWidth; i++) {
-// 		for (let j = _explosionOffsetY; j > -1; j--) {
-// 			let target = getPlayerByCoordinates(i, j);
-// 			if (target !== null) {
-// 				for (let i in target) {
-// 					let t = target[i];
-// 					t.spawnAt(10, 10);
-// 				}
-// 			}
-// 			Map.putObject(i, j, wall);
-// 			Map.putTileEffect(i, j, 1);
-// 		}
-// 	}
+function showLabelTypeH(player, key, text1, text2) {
+	const isMobile = player.isMobile;
+	const topGap = isMobile ? 10 : -2; // 60px from the top on mobile and 48px on PC.
+	/**
+	 * size-based @labelPercentWidth
+	 * XL: isMobile ? 90 : 50;
+	 * L: isMobile ? 80 : 40;
+	 * M: isMobile ? 70 : 28;
+	 * S: isMobile ? 60 : 20
+	 */
+	const labelPercentWidth = isMobile ? 60 : 20;
+	const labelDisplayTime = 4000;
 
-// 	for (let i = 0; i < _mapHeight; i++) {
-// 		for (let j = _explosionOffsetX; j > -1; j--) {
-// 			let target = getPlayerByCoordinates(j, i);
-// 			if (target !== null) {
-// 				target.spawnAt(10, 10);
-// 			}
-// 			Map.putObject(j, i, wall);
-// 			Map.putTileEffect(j, i, 1);
-// 		}
-// 	}
-// }
+	const parentStyle = `
+    display: flex; 
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    `;
 
-function showLabel(key) {
-	for (let i in _players) {
-		let p = _players[i];
-		let str = "";
-		if (!p.isMobile) {
-			str = `<span
-			style="
-				position: absolute;
-				margin: auto;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				height: 75px;
-				width: 30%;
-				top: 200px;
-				left: 35%;
-				background-color: rgba(0, 0, 0, 0.6);
-				border-radius: 12px;
-			"
-			>`;
-		} else {
-			str = `<span
-			style="
-				position: absolute;
-				margin: auto;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				height: 75px;
-				width: 100%;
-				top: 200px;
-				background-color: rgba(0, 0, 0, 0.6);
-				border-radius: 12px;
-			"
-		>`;
-		}
+	const firstRowStyle = `
+    font-size: ${isMobile ? "14px" : "18px"};
+    font-weight: 700; 
+    color: white;`;
 
-		str += key;
+	const highlightSpanStyle = `
+    font-size: ${isMobile ? "14px" : "18px"};
+    font-weight: 700; 
+    color: #FFEB3A;`; // Show red(#FF5353) when timeout is about to expire
 
-		str += "</span>";
+	const customLabelOption = {
+		key: key,
+		borderRadius: "12px",
+		fontOpacity: false,
+		padding: "8px",
+	};
 
-		p.showCustomLabel(str, 0xffffff, 0x000000, -150, 100, 1);
-	}
+	let htmlStr = `<span style="${parentStyle}">
+	<span style="${highlightSpanStyle}">${text1}</span>
+        <span style="${firstRowStyle}">${text2}</span>
+    </span>`;
+
+	player.showCustomLabel(htmlStr, 0xffffff, 0x27262e, topGap, labelPercentWidth, 0.64, labelDisplayTime, customLabelOption);
+}
+
+function showLabelTypeG(player, key, text) {
+	const isMobile = player.isMobile;
+	const topGap = isMobile ? 10 : -2; // 60px from the top on mobile and 48px on PC.
+	/**
+	 * size based @labelPercentWidth
+	 * XL: isMobile ? 90 : 50;
+	 * L: isMobile ? 80 : 40;
+	 * M: isMobile ? 70 : 28;
+	 * S: isMobile ? 60 : 20
+	 */
+	const labelPercentWidth = isMobile ? 60 : 20;
+	const labelDisplayTime = 4000;
+
+	const parentStyle = `
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    text-align: center;
+    `;
+
+	const firstRowStyle = `
+    font-size: ${isMobile ? "14px" : "18px"};
+    font-weight: 700; 
+    color: white;`;
+
+	const customLabelOption = {
+		key: key,
+		borderRadius: "12px",
+		fontOpacity: false,
+		padding: "8px",
+	};
+
+	let htmlStr = `<span style="${parentStyle}">
+        <span style="${firstRowStyle}">${text}</span>
+    </span>`;
+
+	player.showCustomLabel(htmlStr, 0xffffff, 0x27262e, topGap, labelPercentWidth, 0.64, labelDisplayTime, customLabelOption);
 }
 
 function getPlayerByCoordinates(tileX, tileY) {
@@ -154,15 +161,11 @@ function getPlayerByCoordinates(tileX, tileY) {
 	return null;
 }
 
-function spawnMany() {
-	// for (let i = _explosionOffsetX; i <= _mapWidth - _explosionOffsetX; i++) {
-	// 	for (let j = _explosionOffsetY; j <= _mapHeight - _explosionOffsetY; j++) {
-	// 		if (Math.random() < 0.8) {
-	// 			bombSpawn(i, j);
-	// 		}
-	// 	}
-	// }
-	showLabel("\n" + _stage + " 단계 \n\n");
+function spawnManyBombs() {
+	for (const player of App.players) {
+		showLabelTypeG(player, "main", `💣 ${_stage} 단계`);
+	}
+
 	let length = _gameArea.length;
 	if (length > 0) {
 		for (let i = 0; i < length; i++) {
@@ -180,39 +183,44 @@ function spawnMany() {
 }
 
 function bombSpawn(tileX, tileY, last = false) {
-	Map.putObject(tileX, tileY, redBlock);
-	Map.playObjectAnimation(tileX, tileY, "#" + redBlock.id, 2);
+	for (const player of App.players) {
+		const redFloorKey = `redFloor_${tileX}_${tileY}`;
+		// player.addPhaserGo({
+		// 	sprite: {
+		// 		name: redFloorKey,
+		// 		texture: "#" + redBlock.id,
+		// 		x: tileX * 32,
+		// 		y: tileY * 32,
+		// 		alpha: 1,
+		// 	},
+		// });
+		player.callPhaserFunc(redFloorKey, "play", [{ key: "#" + redBlock.id + "_play", repeat: 0, showOnStart: true, hideOnComplete: true }]);
+	}
 	App.runLater(() => {
 		let target = getPlayerByCoordinates(tileX, tileY);
-		Map.putObject(tileX, tileY, null);
-
-		// Map.putObject(tileX - _explosionOffsetX, tileY - _explosionOffsetY, firepilar);
-
-		// Map.playObjectAnimation(
-		// 	tileX - _explosionOffsetX,
-		// 	tileY - _explosionOffsetY,
-		// 	"#" + firepilar.id,
-		// 	2
-		// );
-		Map.putObject(
-			tileX - _explosionOffsetX,
-			tileY - _explosionOffsetY,
-			explosion,
-			{
-				topObject: true,
-			}
-		);
-		Map.playObjectAnimation(
-			tileX - _explosionOffsetX,
-			tileY - _explosionOffsetY,
-			"#" + explosion.id,
-			1
-		);
-		if (_explosionSound === false) {
-			_explosionSound = true;
-			App.playSound("explosion.wav", false, true);
+		for (const player of App.players) {
+			const explosionKey = `explosion_${tileX}_${tileY}`;
+			// player.addPhaserGo({
+			// 	sprite: {
+			// 		name: explosionKey,
+			// 		texture: "#" + explosion.id,
+			// 		x: tileX * 32,
+			// 		y: tileY * 32,
+			// 		alpha: 1,
+			// 	},
+			// });
+			player.callPhaserFunc(explosionKey, "play", [{ key: "#" + explosion.id + "_play", repeat: 0, showOnStart: true, hideOnComplete: true }]);
+			if (_explosionSound === false) {
+				_explosionSound = true;
+				player.playSound("explosion.wav", false, true, "bomb", 0.6);
+			}	
 		}
-
+		// Map.putObject(tileX, tileY, null);
+		// Map.putObject(tileX - _explosionOffsetX, tileY - _explosionOffsetY, explosion, {
+		// 	topObject: true,
+		// });
+		// Map.playObjectAnimation(tileX - _explosionOffsetX, tileY - _explosionOffsetY, "#" + explosion.id, 1);
+		
 		if (target !== null) {
 			for (let i in target) {
 				let t = target[i];
@@ -232,31 +240,17 @@ function bombSpawn(tileX, tileY, last = false) {
 			}
 		}
 
-		App.runLater(() => {
-			Map.putObject(tileX - _explosionOffsetX, tileY - _explosionOffsetY, null);
-		}, 1);
+		// App.runLater(() => {
+		// 	// Map.putObject(tileX - _explosionOffsetX, tileY - _explosionOffsetY, null);
+		// }, 1);
 	}, 1.2);
 }
 
 App.onStart.Add(function () {
-	startState(STATE_INIT);
+	App.runLater(() => {
+		startState(STATE_INIT);
+	}, 1);
 });
-
-// //q
-// App.addOnKeyDown(81, () => {
-// 	// App.playSound("bgm.mp3");
-// 	// App.sayToAll("Check Point 1");
-// 	// App.stopSound();
-
-// 	// App.sayToAll("Check Point 2");
-// 	startState(STATE_INIT);
-// });
-
-// //w
-// App.addOnKeyDown(87, () => {
-// 	_explosionSound = false;
-// 	spawnMany();
-// });
 
 function dead(player) {
 	_playerCount--;
@@ -273,13 +267,16 @@ function startState(state) {
 	let players = App.players;
 	switch (_state) {
 		case STATE_INIT:
-			if (_mapWidth < 25 || _mapHeight < 25) {
-				showLabel(
-					"\n 맵의 크기가 작아서 시작 할 수 없습니다.\n최소 크기: 25x25 \n\n"
-				);
+			if (_mapWidth < BOARD_SIZE || _mapHeight < BOARD_SIZE) {
+				for (const player of App.players) {
+					showLabelTypeG(player, "main", `맵의 크기가 작아서 시작 할 수 없습니다.\n[ 최소 크기: ${BOARD_SIZE} x ${BOARD_SIZE} ]`);
+				}
+
 				return;
 			} else if (_playerCount <= 1) {
-				showLabel("\n 최소 2명 이상의 플레이어가 필요합니다. \n\n");
+				for (const player of App.players) {
+					showLabelTypeG(player, "main", "최소 2명 이상의 플레이어가 필요합니다.");
+				}
 				return;
 			}
 
@@ -289,51 +286,53 @@ function startState(state) {
 			_rank.splice(0);
 			_gameArea.splice(0);
 
-			for (let i in players) {
-				let p = players[i];
-				p.title = "❤️❤️❤️";
-				p.moveSpeed = 0;
-
-				p.sendUpdated();
+			// 게임영역 타일 타입 NONE으로 바꾸기
+			for (let i = _mapMidX - BOARD_SIZE / 2; i < _mapMidX + BOARD_SIZE / 2; i++) {
+				for (let j = _mapMidY - BOARD_SIZE / 2; j < _mapMidY + BOARD_SIZE / 2; j++) {
+					_gameArea.push([i, j]);
+				}
 			}
 
-			// 게임영역 타일 타입 NONE으로 바꾸기
-			for (
-				let i = _mapMidX - BOARD_SIZE / 2;
-				i < _mapMidX + BOARD_SIZE / 2;
-				i++
-			) {
-				for (
-					let j = _mapMidY - BOARD_SIZE / 2;
-					j < _mapMidY + BOARD_SIZE / 2;
-					j++
-				) {
-					// Map.putTileEffect(i, j, TileEffectType.NONE);
-					Map.putTileEffect(i, j, TileEffectType.PRIVATE_AREA, {
-						id: 3, // 필수
-						impassable: false, // 선택, 기본 값 false
-						param1: "true", // 선택, 기본 값 "false"
+			for (const player of App.players) {
+				for (const coord of _gameArea) {
+					let i = coord[0];
+					let j = coord[1];
+					const redFloorKey = `redFloor_${i}_${j}`;
+					player.addPhaserGo({
+						sprite: {
+							name: redFloorKey,
+							texture: "#" + redBlock.id,
+							x: i * 32 + 16,
+							y: j * 32 + 16,
+						},
 					});
-					_gameArea.push([i, j]);
+
+					const explosionKey = `explosion_${i}_${j}`;
+					player.addPhaserGo({
+						sprite: {
+							name: explosionKey,
+							texture: "#" + explosion.id,
+							x: i * 32 + 16,
+							y: j * 32,
+						},
+					});
 				}
 			}
 
 			// 게임영역 밖에 있는 유저를 안으로 스폰시키기
 			for (let i in _players) {
 				let p = _players[i];
-				if (
-					i < _mapMidX - BOARD_SIZE / 2 ||
-					i >= _mapMidX + BOARD_SIZE / 2 ||
-					j < _mapMidY - BOARD_SIZE / 2 ||
-					j >= _mapMidY + BOARD_SIZE / 2
-				) {
+				if (i < _mapMidX - BOARD_SIZE / 2 || i >= _mapMidX + BOARD_SIZE / 2 || j < _mapMidY - BOARD_SIZE / 2 || j >= _mapMidY + BOARD_SIZE / 2) {
 					let rand = Math.floor(Math.random() * 20);
 					p.spawnAt(_gameArea[rand][0], _gameArea[rand][1]);
-					p.sendUpdated();
 				}
+				p.title = "❤️❤️❤️";
+				p.moveSpeed = 0;
+				p.playSound("bgm.mp3", false, true, "bgm", 0.6);
+				p.sendUpdated();
 			}
 			makeFence();
-			App.playSound("bgm.mp3", false, true);
+			
 			// App.playSoundLink(
 			// 	"https://vgmsite.com/soundtracks/metal-slug-4-original-soundtrack/zgisjfaeso/11%20Secret%20Place%20%28Stage%206%29.mp3"
 			// );
@@ -355,17 +354,11 @@ function startState(state) {
 			Map.clearAllObjects();
 			clearFence();
 			App.stopSound();
-
-			// for (let i in _rank) {
-			// 	App.sayToAll(_rank[i][0]);
-			// }
 			for (let i in players) {
 				let p = players[i];
 
 				if (p.title) {
 					if (!p.tag.dead) {
-						// App.sayToAll("생존자" + p.name + " " + p.title.length / 2);
-						// App.sayToAll(p.title);
 						_rank.push([p.name, 0, p.title.length / 2]);
 					}
 				}
@@ -408,19 +401,16 @@ App.onUpdate.Add(function (dt) {
 	if (_start) {
 		if (_state == STATE_INIT) {
 			ONE_SEC -= dt;
-			// App.sayToAll(ONE_SEC);
 			if (ONE_SEC < 0) {
 				ONE_SEC = 1;
 
-				if (start_delay > 0) {
-					showLabel(`\n${--start_delay}초 후 게임이 시작됩니다\n\n`);
-					// App.sayToAll(start_delay);
-					if (start_delay == 0) {
-						start_delay = -1;
+				if (start_delay >= 0) {
+					for (const player of App.players) {
+						showLabelTypeH(player, "main", `⏰ ${start_delay}`, "초 후 게임이 시작됩니다");
 					}
+					--start_delay;
 				} else if (start_delay < 0) {
 					start_delay = 0;
-					// App.sayToAll("시작");
 					startState(STATE_PLAYING);
 				}
 			}
@@ -443,7 +433,7 @@ App.onUpdate.Add(function (dt) {
 				}
 				if (_state == STATE_PLAYING) {
 					_explosionSound = false;
-					spawnMany();
+					spawnManyBombs();
 				}
 			}
 		}
@@ -457,24 +447,10 @@ function makeFence() {
 	let fenceEndPointX = _gameArea[0][0] + BOARD_SIZE;
 	let fenceEndPointY = _gameArea[0][1] + BOARD_SIZE;
 
-	for (
-		let x = fenceStartPointX - _wallOffsetX;
-		x <= fenceEndPointX + _wallOffsetX;
-		x++
-	) {
-		for (
-			let y = fenceStartPointY - _wallOffsetY;
-			y <= fenceEndPointY + _wallOffsetY;
-			y++
-		) {
-			if (
-				x == fenceStartPointX - _wallOffsetX ||
-				y == fenceStartPointY - _wallOffsetY
-			) {
-				if (
-					x <= fenceEndPointX - _wallOffsetX &&
-					y <= fenceEndPointY - _wallOffsetY
-				) {
+	for (let x = fenceStartPointX - _wallOffsetX; x <= fenceEndPointX + _wallOffsetX; x++) {
+		for (let y = fenceStartPointY - _wallOffsetY; y <= fenceEndPointY + _wallOffsetY; y++) {
+			if (x == fenceStartPointX - _wallOffsetX || y == fenceStartPointY - _wallOffsetY) {
+				if (x <= fenceEndPointX - _wallOffsetX && y <= fenceEndPointY - _wallOffsetY) {
 					Map.putObjectWithKey(x, y, wall_offset, {
 						key: `wall${x}${y}`,
 					});
@@ -482,24 +458,14 @@ function makeFence() {
 			}
 
 			if (x == fenceEndPointX || y == fenceEndPointY) {
-				if (
-					x <= fenceEndPointX &&
-					y <= fenceEndPointY &&
-					x >= fenceStartPointX &&
-					y >= fenceStartPointY
-				) {
+				if (x <= fenceEndPointX && y <= fenceEndPointY && x >= fenceStartPointX && y >= fenceStartPointY) {
 					Map.putObjectWithKey(x, y, wall, {
 						key: `wall${x}${y}`,
 					});
 				}
 			}
 
-			if (
-				x == fenceStartPointX ||
-				y == fenceStartPointY ||
-				x == fenceEndPointX ||
-				y == fenceEndPointY
-			) {
+			if (x == fenceStartPointX || y == fenceStartPointY || x == fenceEndPointX || y == fenceEndPointY) {
 				Map.putTileEffect(x, y, 1);
 			}
 		}
@@ -512,22 +478,9 @@ function clearFence() {
 	let fenceEndPointX = _gameArea[0][0] + BOARD_SIZE;
 	let fenceEndPointY = _gameArea[0][1] + BOARD_SIZE;
 
-	for (
-		let x = fenceStartPointX - _wallOffsetX;
-		x <= fenceEndPointX + _wallOffsetX;
-		x++
-	) {
-		for (
-			let y = fenceStartPointY - _wallOffsetY;
-			y <= fenceEndPointY + _wallOffsetY;
-			y++
-		) {
-			if (
-				x == fenceStartPointX ||
-				y == fenceStartPointY ||
-				x == fenceEndPointX ||
-				y == fenceEndPointY
-			) {
+	for (let x = fenceStartPointX - _wallOffsetX; x <= fenceEndPointX + _wallOffsetX; x++) {
+		for (let y = fenceStartPointY - _wallOffsetY; y <= fenceEndPointY + _wallOffsetY; y++) {
+			if (x == fenceStartPointX || y == fenceStartPointY || x == fenceEndPointX || y == fenceEndPointY) {
 				Map.putTileEffect(x, y, 0);
 			}
 		}
@@ -562,6 +515,6 @@ App.onLeavePlayer.Add(function (p) {
 
 function ghostPlayer(player) {
 	player.sprite = ghost;
-	player.title = "생존자의 길을 막으세요!";
+	player.title = "유령";
 	player.sendUpdated();
 }
